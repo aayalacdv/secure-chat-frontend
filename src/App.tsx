@@ -1,25 +1,39 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { UserContextProvider, UserContext } from './context/UserContext';
+import Room from './components/Room';
+import Home from './components/Home';
+
+import { useContext, useRef } from 'react';
 
 function App() {
+
+
+  const userNameRef = useRef<HTMLInputElement>(null) 
+  const ctx = useContext(UserContext)
+
+
+
+  const handleUserName = () => {
+    const value = userNameRef.current!.value; 
+
+    if(!value){
+      return 
+    }
+
+
+    console.log(value)
+
+    ctx.setUserName('hola')
+
+  }
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <UserContextProvider>
+        <Home/>
+        <Room/>
+      </UserContextProvider>
+    </>
   );
 }
 
