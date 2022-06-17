@@ -1,5 +1,10 @@
-import React, { ReactNode, useContext, useEffect, useRef, useState } from 'react'
+import { stringify } from 'querystring'
+import React, { ReactNode, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { json } from 'stream/consumers'
+import { measureMemory } from 'vm'
 import { IUserContext, UserContext } from '../context/UserContext'
+import { RSA_DATA } from '../data/rsa-data'
+import { decryptPayload, encryptPayload } from '../rsaUtils/basic-RSA'
 
 
 const MessageContainer: React.FC<{ sender: string, msg: string }> = (props) => {
@@ -15,10 +20,13 @@ const MessageContainer: React.FC<{ sender: string, msg: string }> = (props) => {
 
 
 const Room: React.FC = () => {
-    const { socket, roomId, messages, userName } = useContext(UserContext)
+    const { socket, userName, messages, selectedUser, setMessages, connectedUsers} = useContext(UserContext)
     const msgRef = useRef<HTMLInputElement>(null)
 
 
+    useEffect(() => {
+
+    },[])
 
     const sendMessage = () => {
 
@@ -29,18 +37,32 @@ const Room: React.FC = () => {
             return
         }
 
-        socket.emit('room-message', roomId, value, userName)
 
+        let messageCipher : string = ''
+        connectedUsers.forEach((user) => {
+            if (user.id == selectedUser){
+
+                messageCipher = encryptPayload(value, BigInt(user.publicKey.e),BigInt(user.publicKey.n)).toString()
+
+            }
+        })
+
+
+
+        socket.emit('private-message', ({ to: selectedUser, message: messageCipher, prev: messages}))
+        setMessages([...messages, { from: userName , message: value}])
+        
     }
 
 
 
 
     return <>
-        <h1>Room: {roomId}</h1>
+        <h1>Room: {selectedUser}</h1>
+        {userName}
         <div className='messages-container'>
             <div className='msgs'>
-                {messages.map((m, i) => <MessageContainer key={i} sender={m.userName} msg={m.message}/>)}
+                {messages.map((m, i) => <MessageContainer key={i} sender={m.from} msg={m.message}/>)}
             </div>
             <div className='input-box'>
                 <input ref={msgRef} type="text" placeholder='Text' />
